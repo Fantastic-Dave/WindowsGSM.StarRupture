@@ -19,7 +19,7 @@ namespace WindowsGSM.Plugins
         public Plugin Plugin = new Plugin
         {
             name = "WindowsGSM.StarRupture", // WindowsGSM.XXXX
-            author = "fantasticdave", // thank you sh1ny for your ark plugin its based on that
+            author = "fantasticdave", // thanks to sh1ny for the asa plugin i used that as the base for this!
             description = "WindowsGSM plugin for supporting StarRupture Dedicated Server",
             version = "1.21",
             url = "https://github.com/fantasticdave/WindowsGSM.StarRupture/", // Github repository link (Best practice)
@@ -37,7 +37,7 @@ namespace WindowsGSM.Plugins
 
 
         // - Game server Fixed variables
-        public string StartPath = @"StarRuptureServerEOS.exe"; // Game server start path
+        public string StartPath = @"StarRupture\Binaries\Win64\StarRuptureServerEOS-Win64-Shipping.exe"; // Game server start path
         public string FullName = "StarRupture Dedicated Server"; // Game server FullName
         public bool AllowsEmbedConsole = true;  // Does this server support output redirect?
         public int PortIncrements = 2; // This tells WindowsGSM how many ports should skip after installation
@@ -69,6 +69,10 @@ namespace WindowsGSM.Plugins
             }
 
             var param = new StringBuilder();
+
+            if (!string.IsNullOrWhiteSpace(_serverData.ServerName))
+                param.Append($" StarRupture -Log ");
+
 
             if (!string.IsNullOrWhiteSpace(_serverData.ServerName))
                 param.Append($" -ServerName=\"\"\"{_serverData.ServerName}\"\"\"");
