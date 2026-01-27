@@ -6,8 +6,6 @@ using WindowsGSM.Functions;
 using WindowsGSM.GameServer.Query;
 using WindowsGSM.GameServer.Engine;
 using System.IO;
-using System.Linq;
-using System.Net;
 
 
 
@@ -33,7 +31,7 @@ namespace WindowsGSM.Plugins
         // - Standard Constructor and properties
         public StarRupture(ServerConfig serverData) : base(serverData) => base.serverData = _serverData = serverData;
         private readonly ServerConfig _serverData;
-        public string Error, Notice;
+        public string Error;
 
 
         // - Game server Fixed variables
@@ -49,11 +47,12 @@ namespace WindowsGSM.Plugins
         public string QueryPort = "27015"; // Default query port
         public string Defaultmap = "Default"; // Default map name
         public string Maxplayers = "10"; // Default maxplayers
-        public string Additional = ""; // Additional server start parameter
+        // Additional server start parameter; unused but kept for future custom flags
+        public string Additional = "";
 
 
         // - Create a default cfg for the game server after installation
-        public async void CreateServerCFG()
+        public void CreateServerCFG()
         {
             //No config file seems
         }
@@ -84,7 +83,7 @@ namespace WindowsGSM.Plugins
                 param.Append($" -Port={_serverData.ServerPort}");
 
             if (!string.IsNullOrWhiteSpace(_serverData.ServerQueryPort))
-                param.Append($"-QueryPort={_serverData.ServerQueryPort}");
+                param.Append($" -QueryPort={_serverData.ServerQueryPort}");
 
             if (!string.IsNullOrWhiteSpace(_serverData.ServerParam))
                 if(_serverData.ServerParam.StartsWith("?"))
@@ -141,19 +140,18 @@ namespace WindowsGSM.Plugins
         {
             await Task.Run(async () =>
             {
-                if (p.StartInfo.CreateNoWindow)
-                {
-                    p.CloseMainWindow();
-                }
-                else
+                // Prefer graceful Ctrl+C shutdown for UE-based dedicated servers
+                try
                 {
                     Functions.ServerConsole.SetMainWindow(p.MainWindowHandle);
-
-                    Functions.ServerConsole.SendWaitToMainWindow("SaveWorld");
-					Functions.ServerConsole.SendWaitToMainWindow("{ENTER}");
-                    Functions.ServerConsole.SendWaitToMainWindow("quit");
+                    Functions.ServerConsole.SendWaitToMainWindow("^C");
                     Functions.ServerConsole.SendWaitToMainWindow("{ENTER}");
                     await Task.Delay(6000);
+                }
+                catch
+                {
+                    // Fallback to closing the main window if Ctrl+C fails
+                    try { p.CloseMainWindow(); } catch { /* ignore */ }
                 }
             });
         }
