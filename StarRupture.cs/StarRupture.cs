@@ -51,10 +51,82 @@ namespace WindowsGSM.Plugins
         public string Additional = "";
 
 
+        private void CreateServerSettingsFile()
+        {
+            // Build DSSettings.txt using WindowsGSM inputs and optional ServerParam overrides
+            var settingsPath = Functions.ServerPath.GetServersServerFiles(_serverData.ServerID, "DSSettings.txt");
+
+            string sessionName = GetParamOrDefault("SessionName", string.IsNullOrWhiteSpace(_serverData.ServerName)
+                ? $"StarRupture-{_serverData.ServerID}"
+                : _serverData.ServerName);
+
+            string saveGameInterval = GetParamOrDefault("SaveGameInterval", "300");
+            string startNewGame = GetParamOrDefault("StartNewGame", "true");
+            string loadSavedGame = GetParamOrDefault("LoadSavedGame", "false");
+            string saveGameName = GetParamOrDefault("SaveGameName", "AutoSave0.sav");
+
+            // Avoid conflicting start/load flags
+            if (bool.TryParse(loadSavedGame, out var loadFlag) && loadFlag)
+            {
+                startNewGame = "false";
+            }
+
+            var json = new StringBuilder()
+                .AppendLine("{")
+                .AppendLine($"  \"SessionName\": \"{sessionName}\",")
+                .AppendLine($"  \"SaveGameInterval\": \"{saveGameInterval}\",")
+                .AppendLine($"  \"StartNewGame\": \"{startNewGame}\",")
+                .AppendLine($"  \"LoadSavedGame\": \"{loadSavedGame}\",")
+                .AppendLine($"  \"SaveGameName\": \"{saveGameName}\"")
+                .AppendLine("}");
+
+            try
+            {
+                File.WriteAllText(settingsPath, json.ToString());
+            }
+            catch (Exception ex)
+            {
+                Error = $"Failed to write DSSettings.txt: {ex.Message}";
+            }
+        }
+
+        private string GetParamOrDefault(string key, string defaultValue)
+        {
+            var value = ExtractParamValue(_serverData.ServerParam, key);
+            return string.IsNullOrWhiteSpace(value) ? defaultValue : value;
+        }
+
+        private static string ExtractParamValue(string paramString, string key)
+        {
+            if (string.IsNullOrWhiteSpace(paramString))
+            {
+                return null;
+            }
+
+            var tokens = paramString.Split(new[] { '?', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var token in tokens)
+            {
+                var cleaned = token.Trim().TrimStart('-', '/');
+                var parts = cleaned.Split(new[] { '=' }, 2, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length != 2)
+                {
+                    continue;
+                }
+
+                if (parts[0].Equals(key, StringComparison.OrdinalIgnoreCase))
+                {
+                    return parts[1].Trim().Trim('"');
+                }
+            }
+
+            return null;
+        }
+
+
         // - Create a default cfg for the game server after installation
         public void CreateServerCFG()
         {
-            //No config file seems
+            CreateServerSettingsFile();
         }
 
         // - Start server function, return its Process to WindowsGSM
@@ -66,6 +138,8 @@ namespace WindowsGSM.Plugins
                 Error = $"{Path.GetFileName(shipExePath)} not found ({shipExePath})";
                 return null;
             }
+
+            CreateServerSettingsFile();
 
             var param = new StringBuilder();
 

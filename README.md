@@ -22,11 +22,34 @@ WindowsGSM plugin for installing and running the StarRupture Dedicated Server vi
 The plugin passes common flags automatically: `-Log`, `-ServerName`, `-MULTIHOME`, `-Port`, `-QueryPort`, plus any custom parameters you enter. Use `-`-prefixed flags (e.g. `-NoCrashDialog`) or UE-style `?` options if supported by the game.
 
 ## Configuration File (DSSettings.txt)
-Place `DSSettings.txt` in the server root beside `StarRuptureServerEOS.exe`. JSON example:
+The plugin **automatically generates** `DSSettings.txt` during server startup using WindowsGSM inputs. No manual file creation needed!
+
+### Automatic Values
+- **SessionName**: Uses your WindowsGSM Server Name; falls back to `StarRupture-<ServerID>` if blank.
+- **SaveGameInterval**: 300 seconds (5 minutes) by default.
+- **StartNewGame**: `true` by default.
+- **LoadSavedGame**: `false` by default.
+- **SaveGameName**: `AutoSave0.sav` by default.
+
+### Override via ServerParam
+To customize DSSettings at launch, add parameters to the **Additional Arguments** field using `Key=Value` format:
 
 ```
+SessionName=MyWorld SaveGameInterval=600 StartNewGame=false LoadSavedGame=true
+```
+
+Supported override keys (case-insensitive):
+- `SessionName` — Custom world folder/session name
+- `SaveGameInterval` — Autosave frequency in seconds
+- `StartNewGame` — `true` or `false` to create new world
+- `LoadSavedGame` — `true` or `false` to load existing save
+
+If both `StartNewGame=false` and `LoadSavedGame=true` are set, `StartNewGame` is automatically set to `false`.
+
+### Example Generated File
+```json
 {
-  "SessionName": "SESSIONNAME",
+  "SessionName": "MyServer",
   "SaveGameInterval": "300",
   "StartNewGame": "true",
   "LoadSavedGame": "false",
@@ -34,12 +57,7 @@ Place `DSSettings.txt` in the server root beside `StarRuptureServerEOS.exe`. JSO
 }
 ```
 
-### Options
-- SessionName: Folder name for the world save; also shown as the session title.
-- SaveGameInterval: Autosave frequency in seconds (e.g., 300 = 5 minutes).
-- StartNewGame: `true` to generate a new world; `false` to load an existing one.
-- LoadSavedGame: Opposite of StartNewGame; `true` loads an existing save.
-- SaveGameName: File name of the save under `/StarRupture/Saved/SaveGames/<SessionName>/`.
+The file is always written to the server root next to `StarRuptureServerEOS.exe`.
 
 ## Tips
 - If the server fails to start, confirm ports 7777/UDP and 27015/UDP are open on the firewall and router.
